@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Raytracing a gravitational lens</title>
+  <link rel="stylesheet" href="bridge.css" type="text/css" />
+  <script src='bridge.js' type="text/javascript"></script>
+</head>
+<body>
+  <table class='maintable'>
+    <tr>
+      <td colspan=2>
+        <h1>Raytracing a gravitational lens (or two (or four?))</h1>
+  <div class='loadsave'>
+  <button id="load" onClick="loadAll()">Load</button>
+  <button id="save" onClick="saveAll()">Save</button>
+  <br/><div class='version'>Version 0.0.1</div>
+  </div>
+        <div class='intro'> Just a simple raytracing model, only a few dozen lines of code. Included are single-lens and two-lens ('bridge') solutions. Units are arbitrary and the lenses are exaggerated for visibility. Needless to say, nonsensical values produce nonsensical images.</div>
+      </td>
+    </tr>
+    <tr>
+      <td class='surface'>
+        <canvas id="imageCanvas" width="640" height="640"></canvas>
+      </td>
+      <td>
+        <table class='paramtable'>
+          <tr>
+            <th>View: </th>
+            <td colspan=2>
+              <select id='type' onChange='doChange()'>
+                <option value='1'>Plain view</option>
+                <option value='2'>Single lens</option>
+                <option value='3'>Lens bridge</option>
+                <option value='4'>Triple lens</option>
+                <option value='5'>Quadruple lens</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <th>Object radius: </th>
+            <td colspan=2><input type=number min=0 max=1000 step=100 id='R0' onChange='doChange()'></input></td>
+          </tr>
+          <tr>
+            <th>Hor. Displacement: </th>
+            <td colspan=2><input type=number min=0 max=10000 step=500 id='DX0' onChange='doChange()'></input></td>
+          </tr>
+          <tr>
+            <th>Vert. Displacement: </th>
+            <td colspan=2><input type=number min=0 max=10000 step=500 id='DY0' onChange='doChange()'></input></td>
+          </tr>
+          <tr class='divider'>
+            <td colspan=3>&nbsp;</td>
+          </tr>
+          <tr>
+            <th>&nbsp;</th>
+            <th>Lens 1</th>
+            <th>Lens 2</th>
+          </tr>
+          <tr>
+            <th>Mass radius: </th>
+            <td><input type=number min=0 max=1000 step=50 id='G1' onChange='doChange()'></input></td>
+            <td><input type=number min=0 max=1000 step=50 id='G2' onChange='doChange()'></input></td>
+          </tr>
+          <tr>
+            <th>Shadow radius: </th>
+            <td><input type=number min=0 max=1000 step=50 id='R1' onChange='doChange()'></input></td>
+            <td><input type=number min=0 max=1000 step=50 id='R2' onChange='doChange()'></input></td>
+          </tr>
+          <tr>
+            <th>Object Distance: </th>
+            <td><input type=number min=0 max=100000 step=1000 id='Z1' onChange='doChange()'></input></td>
+            <td><input type=number min=0 max=100000 step=1000 id='Z2' onChange='doChange()'></input></td>
+          </tr>
+          <tr>
+            <th>Image Distance: </th>
+            <td><input type=number min=0 max=100000 step=1000 id='I1' onChange='doChange()'></input></td>
+            <td><input type=number min=0 max=100000 step=1000 id='I2' onChange='doChange()'></input></td>
+          </tr>
+          <tr>
+            <th>Hor. Displacement: </th>
+            <td><input type=number min=0 max=10000 step=500 id='DX1' onChange='doChange()'></input></td>
+            <td><input type=number min=0 max=10000 step=500 id='DX2' onChange='doChange()'></input></td>
+          </tr>
+          <tr>
+            <th>Vert. Displacement: </th>
+            <td><input type=number min=0 max=10000 step=500 id='DY1' onChange='doChange()'></input></td>
+            <td><input type=number min=0 max=10000 step=500 id='DY2' onChange='doChange()'></input></td>
+          </tr>
+          <tr>
+            <th>&nbsp;</th>
+            <th>Lens 3</th>
+            <th>Lens 4</th>
+          </tr>
+          <tr>
+            <th>Mass radius: </th>
+            <td><input type=number min=0 max=1000 step=50 id='G3' onChange='doChange()'></input></td>
+            <td><input type=number min=0 max=1000 step=50 id='G4' onChange='doChange()'></input></td>
+          </tr>
+          <tr>
+            <th>Shadow radius: </th>
+            <td><input type=number min=0 max=1000 step=50 id='R3' onChange='doChange()'></input></td>
+            <td><input type=number min=0 max=1000 step=50 id='R4' onChange='doChange()'></input></td>
+          </tr>
+          <tr>
+            <th>Object Distance: </th>
+            <td><input type=number min=0 max=100000 step=1000 id='Z3' onChange='doChange()'></input></td>
+            <td><input type=number min=0 max=100000 step=1000 id='Z4' onChange='doChange()'></input></td>
+          </tr>
+          <tr>
+            <th>Image Distance: </th>
+            <td><input type=number min=0 max=100000 step=1000 id='I3' onChange='doChange()'></input></td>
+            <td><input type=number min=0 max=100000 step=1000 id='I4' onChange='doChange()'></input></td>
+          </tr>
+          <tr>
+            <th>Hor. Displacement: </th>
+            <td><input type=number min=0 max=10000 step=500 id='DX3' onChange='doChange()'></input></td>
+            <td><input type=number min=0 max=10000 step=500 id='DX4' onChange='doChange()'></input></td>
+          </tr>
+          <tr>
+            <th>Vert. Displacement: </th>
+            <td><input type=number min=0 max=10000 step=500 id='DY3' onChange='doChange()'></input></td>
+            <td><input type=number min=0 max=10000 step=500 id='DY4' onChange='doChange()'></input></td>
+          </tr>
+          <tr id='lumtr1' style='display: none;'>
+            <th>Luminosity: </th>
+            <td colspan=2 id='lum'></td>
+          </tr>
+          <tr id='lumtr2' style='display: none;'>
+            <th>Adjusted luminosity: </th>
+            <td colspan=2 id='LUM'></td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
