@@ -1,4 +1,4 @@
-// bridge.js : Tetrahedral constellation simulation
+// bridge.js : Multiple gravitational lens ray tracing simulation
 //
 // Copyright (c) 2023 Viktor T. Toth
 // 
