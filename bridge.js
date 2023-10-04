@@ -49,6 +49,8 @@ var DX3 = 0;
 var DY3 = 0;
 var DX4 = 0;
 var DY4 = 0;
+var DXV = 0;
+var DYV = 0;
 var R0 = 500;
 var DX = 1e-4;
 var DY = 1e-4;
@@ -93,7 +95,9 @@ function saveAll()
     DX3: DX3,
     DY3: DY3,
     DX4: DX4,
-    DY4: DY4
+    DY4: DY4,
+    DXV: DXV,
+    DYV: DYV
   });
 
   let blob = new Blob([savedata], {type: "application/json"});
@@ -102,6 +106,16 @@ function saveAll()
   a.href = url;
   a.download=document.title + ".json";
   a.click();
+}
+
+function saveCanvasAsImage()
+{
+  var canvas = document.querySelector('canvas');
+  var image = canvas.toDataURL('image/png');
+  var link = document.createElement('a');
+  link.download = 'lenses.png';
+  link.href = image;
+  link.click();
 }
 
 function loadAll()
@@ -149,6 +163,11 @@ function loadAll()
       DY3 = data.DY3;
       DX4 = data.DX4;
       DY4 = data.DY4;
+      if (data.hasOwnProperty('DXV'))
+      {
+        DXV = data.DXV;
+        DYV = data.DYV;
+      }
 
       document.getElementById('type').value = model;
       doUpdate();
@@ -189,7 +208,11 @@ function doUpdate()
   document.getElementById('DY3').value = DY3;
   document.getElementById('DX4').value = DX4;
   document.getElementById('DY4').value = DY4;
+  document.getElementById('DXV').value = DXV;
+  document.getElementById('DYV').value = DYV;
   document.getElementById('R0').value = R0;
+  document.getElementById('I0').value = I0;
+  document.getElementById('Z0').value = Z0;
 }
 
 function doChange()
@@ -206,6 +229,8 @@ function doChange()
     G2 = 1*document.getElementById('G2').value;
     R1 = 1*document.getElementById('R1').value;
     R2 = 1*document.getElementById('R2').value;
+    Z0 = 1*document.getElementById('Z0').value;
+    I0 = 1*document.getElementById('I0').value;
     Z1 = 1*document.getElementById('Z1').value;
     Z2 = 1*document.getElementById('Z2').value;
     I1 = 1*document.getElementById('I1').value;
@@ -228,6 +253,8 @@ function doChange()
     DY3 = 1*document.getElementById('DY3').value;
     DX4 = 1*document.getElementById('DX4').value;
     DY4 = 1*document.getElementById('DY4').value;
+    DXV = 1*document.getElementById('DXV').value;
+    DYV = 1*document.getElementById('DYV').value;
     R0 = 1*document.getElementById('R0').value;
     let l = drawImagePixelByPixel();
 
@@ -265,6 +292,10 @@ function doChange()
     document.getElementById('DX4').disabled = !(model >= 5);
     document.getElementById('DY4').disabled = !(model >= 5);
     document.getElementById('R0').disabled = false;
+    document.getElementById('I0').disabled = false;
+    document.getElementById('DXV').disabled = false;
+    document.getElementById('DYV').disabled = false;
+    document.getElementById('Z0').disabled = !(model < 2);
   }, 0);
 }
 
@@ -284,14 +315,14 @@ function getColorAtPixel(x, y)
   let x0, y0;
   let dx, dy;
 
-  x = (x-R)*1000/canvas.width;
-  y = (y-R)*1000/canvas.height;
+  x = (x-R)*(2*R)/canvas.width;
+  y = (y-R)*(2*R)/canvas.height;
 
   switch (1*model)
   {
   case 1: // Unobstructed object
-    x = x*Z0/I0 - DX0;
-    y = y*Z0/I0 - DY0;
+    x = x*Z0/I0 - DX0 + DXV;
+    y = y*Z0/I0 - DY0 + DYV;
     l = getObject(x, y);
     L = l * Z0*Z0/I0/I0;
     break;
@@ -303,14 +334,14 @@ function getColorAtPixel(x, y)
     y0 = y * I1/I0;
 
     // Impact parameter
-    b = Math.sqrt((x0 - DX1)**2 + (y0 - DY1)**2);
+    b = Math.sqrt((x0 - DX1 + DXV)**2 + (y0 - DY1 + DYV)**2);
     theta = G1/b;
     if (b > R1 && Math.abs(theta) < Math.PI/4)
     {
-      x0 = x + x0*(Z1+I1)/I1 - (x0-DX1)/b*Z1*Math.tan(theta);
-      y0 = y + y0*(Z1+I1)/I1 - (y0-DY1)/b*Z1*Math.tan(theta);
+      x0 = x + x0*(Z1+I1)/I1 - (x0-DX1 + DXV)/b*Z1*Math.tan(theta);
+      y0 = y + y0*(Z1+I1)/I1 - (y0-DY1 + DYV)/b*Z1*Math.tan(theta);
 
-      l = getObject(x0 - DX0, y0 - DY0);
+      l = getObject(x0 - DX0 + DXV, y0 - DY0 + DYV);
       L = l;
     }
     break;
@@ -322,21 +353,21 @@ function getColorAtPixel(x, y)
     y0 = y * I2/I0;
 
     // Impact parameter
-    b = Math.sqrt((x0 - DX2)**2 + (y0 - DY2)**2);
+    b = Math.sqrt((x0 - DX2 + DXV)**2 + (y0 - DY2 + DYV)**2);
     theta = G2/b;
     if (b > R2 && Math.abs(theta) < Math.PI/4)
     {
-      x0 = x + x0*(Z2+I2)/I2 - (x0-DX2)/b*Z2*Math.tan(theta);
-      y0 = y + y0*(Z2+I2)/I2 - (y0-DY2)/b*Z2*Math.tan(theta);
+      x0 = x + x0*(Z2+I2)/I2 - (x0-DX2 + DXV)/b*Z2*Math.tan(theta);
+      y0 = y + y0*(Z2+I2)/I2 - (y0-DY2 + DYV)/b*Z2*Math.tan(theta);
 
-      b = Math.sqrt((x0 - DX1)**2 + (y0 - DY1)**2);
+      b = Math.sqrt((x0 - DX1 + DXV)**2 + (y0 - DY1 + DYV)**2);
       theta = G1/b;
       if (b > R1 && Math.abs(theta) < Math.PI/4)
       {
-        x0 = x + x0*(Z1+Z2+I2)/(Z2+I2)  - (x0-DX1)/b*Z1*Math.tan(theta);
-        y0 = y + y0*(Z1+Z2+I2)/(Z2+I2)  - (y0-DY1)/b*Z1*Math.tan(theta);
+        x0 = x + x0*(Z1+Z2+I2)/(Z2+I2)  - (x0-DX1 + DXV)/b*Z1*Math.tan(theta);
+        y0 = y + y0*(Z1+Z2+I2)/(Z2+I2)  - (y0-DY1 + DYV)/b*Z1*Math.tan(theta);
 
-        l = getObject(x0 - DX0, y0 - DY0);
+        l = getObject(x0 - DX0 + DXV, y0 - DY0 + DYV);
         L = l;
       }
     }
@@ -349,28 +380,28 @@ function getColorAtPixel(x, y)
     y0 = y * I3/I0;
 
     // Impact parameter
-    b = Math.sqrt((x0 - DX3)**2 + (y0 - DY3)**2);
+    b = Math.sqrt((x0 - DX3 + DXV)**2 + (y0 - DY3 + DYV)**2);
     theta = G3/b;
     if (b > R3 && Math.abs(theta) < Math.PI/4)
     {
-      x0 = x + x0*(Z3+I3)/I3 - (x0-DX3)/b*Z3*Math.tan(theta);
-      y0 = y + y0*(Z3+I3)/I3 - (y0-DY3)/b*Z3*Math.tan(theta);
+      x0 = x + x0*(Z3+I3)/I3 - (x0-DX3 + DXV)/b*Z3*Math.tan(theta);
+      y0 = y + y0*(Z3+I3)/I3 - (y0-DY3 + DYV)/b*Z3*Math.tan(theta);
 
-      b = Math.sqrt((x0 - DX2)**2 + (y0 - DY2)**2);
+      b = Math.sqrt((x0 - DX2 + DXV)**2 + (y0 - DY2 + DYV)**2);
       theta = G2/b;
       if (b > R2 && Math.abs(theta) < Math.PI/4)
       {
-        x0 = x + x0*(Z2+Z3+I3)/(Z3+I3)  - (x0-DX2)/b*Z2*Math.tan(theta);
-        y0 = y + y0*(Z2+Z3+I3)/(Z3+I3)  - (y0-DY2)/b*Z2*Math.tan(theta);
+        x0 = x + x0*(Z2+Z3+I3)/(Z3+I3)  - (x0-DX2 + DXV)/b*Z2*Math.tan(theta);
+        y0 = y + y0*(Z2+Z3+I3)/(Z3+I3)  - (y0-DY2 + DYV)/b*Z2*Math.tan(theta);
 
-        b = Math.sqrt((x0 - DX1)**2 + (y0 - DY1)**2);
+        b = Math.sqrt((x0 - DX1 + DXV)**2 + (y0 - DY1 + DYV)**2);
         theta = G1/b;
         if (b > R1 && Math.abs(theta) < Math.PI/4)
         {
-          x0 = x + x0*(Z1+Z2+Z3+I3)/(Z2+Z3+I3) - (x0-DX1)/b*Z1*Math.tan(theta);
-          y0 = y + y0*(Z1+Z2+Z3+I3)/(Z2+Z3+I3) - (y0-DY1)/b*Z1*Math.tan(theta);
+          x0 = x + x0*(Z1+Z2+Z3+I3)/(Z2+Z3+I3) - (x0-DX1 + DXV)/b*Z1*Math.tan(theta);
+          y0 = y + y0*(Z1+Z2+Z3+I3)/(Z2+Z3+I3) - (y0-DY1 + DYV)/b*Z1*Math.tan(theta);
 
-          l = getObject(x0 - DX0, y0 - DY0);
+          l = getObject(x0 - DX0 + DXV, y0 - DY0 + DYV);
           L = l;
         }
       }
@@ -384,35 +415,35 @@ function getColorAtPixel(x, y)
     y0 = y * I4/I0;
 
     // Impact parameter
-    b = Math.sqrt((x0 - DX4)**2 + (y0 - DY4)**2);
+    b = Math.sqrt((x0 - DX4 + DXV)**2 + (y0 - DY4 + DYV)**2);
     theta = G4/b;
     if (b > R4 && Math.abs(theta) < Math.PI/4)
     {
-      x0 = x + x0*(Z4+I4)/I4 - (x0-DX4)/b*Z4*Math.tan(theta);
-      y0 = y + y0*(Z4+I4)/I4 - (y0-DY4)/b*Z4*Math.tan(theta);
+      x0 = x + x0*(Z4+I4)/I4 - (x0-DX4 + DXV)/b*Z4*Math.tan(theta);
+      y0 = y + y0*(Z4+I4)/I4 - (y0-DY4 + DYV)/b*Z4*Math.tan(theta);
 
-      b = Math.sqrt((x0 - DX3)**2 + (y0 - DY3)**2);
+      b = Math.sqrt((x0 - DX3 + DXV)**2 + (y0 - DY3 + DYV)**2);
       theta = G3/b;
       if (b > R3 && Math.abs(theta) < Math.PI/4)
       {
-        x0 = x + x0*(Z3+Z4+I4)/(Z4+I4)  - (x0-DX3)/b*Z3*Math.tan(theta);
-        y0 = y + y0*(Z3+Z4+I4)/(Z4+I4)  - (y0-DY3)/b*Z3*Math.tan(theta);
+        x0 = x + x0*(Z3+Z4+I4)/(Z4+I4)  - (x0-DX3 + DXV)/b*Z3*Math.tan(theta);
+        y0 = y + y0*(Z3+Z4+I4)/(Z4+I4)  - (y0-DY3 + DYV)/b*Z3*Math.tan(theta);
 
-        b = Math.sqrt((x0 - DX2)**2 + (y0 - DY2)**2);
+        b = Math.sqrt((x0 - DX2 + DXV)**2 + (y0 - DY2 + DYV)**2);
         theta = G2/b;
         if (b > R2 && Math.abs(theta) < Math.PI/4)
         {
-          x0 = x + x0*(Z2+Z3+Z4+I4)/(Z3+Z4+I4) - (x0-DX2)/b*Z2*Math.tan(theta);
-          y0 = y + y0*(Z2+Z3+Z4+I4)/(Z3+Z4+I4) - (y0-DY2)/b*Z2*Math.tan(theta);
+          x0 = x + x0*(Z2+Z3+Z4+I4)/(Z3+Z4+I4) - (x0-DX2 + DXV)/b*Z2*Math.tan(theta);
+          y0 = y + y0*(Z2+Z3+Z4+I4)/(Z3+Z4+I4) - (y0-DY2 + DYV)/b*Z2*Math.tan(theta);
 
-          b = Math.sqrt((x0 - DX1)**2 + (y0 - DY1)**2);
+          b = Math.sqrt((x0 - DX1 + DXV)**2 + (y0 - DY1 + DYV)**2);
           theta = G1/b;
           if (b > R1 && Math.abs(theta) < Math.PI/4)
           {
-            x0 = x + x0*(Z1+Z2+Z3+Z4+I4)/(Z2+Z3+Z4+I4) - (x0-DX1)/b*Z1*Math.tan(theta);
-            y0 = y + y0*(Z1+Z2+Z3+Z4+I4)/(Z2+Z3+Z4+I4) - (y0-DY1)/b*Z1*Math.tan(theta);
+            x0 = x + x0*(Z1+Z2+Z3+Z4+I4)/(Z2+Z3+Z4+I4) - (x0-DX1 + DXV)/b*Z1*Math.tan(theta);
+            y0 = y + y0*(Z1+Z2+Z3+Z4+I4)/(Z2+Z3+Z4+I4) - (y0-DY1 + DYV)/b*Z1*Math.tan(theta);
 
-            l = getObject(x0 - DX0, y0 - DY0);
+            l = getObject(x0 - DX0 + DXV, y0 - DY0 + DYV);
             L = l;
           }
         }

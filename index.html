@@ -129,6 +129,40 @@
             <th>Adjusted luminosity: </th>
             <td colspan=2 id='LUM'></td>
           </tr>
+
+          <tr>
+            <th>&nbsp;</th>
+            <th>Viewer</th>
+            <th>&nbsp;</th>
+          </tr>
+          <tr>
+            <th>Object distance: </th>
+            <td><input type=number min=0 max=100000 step=1000 id='Z0' onChange='doChange()'></input></td>
+            <td>&nbsp;</td>
+          </tr>
+          <tr>
+            <th>View distance: </th>
+            <td><input type=number min=0 max=100000 step=1000 id='I0' onChange='doChange()'></input></td>
+            <td>&nbsp;</td>
+          </tr>
+          <tr>
+            <th>Hor. Displacement: </th>
+            <td><input type=number min=0 max=10000 step=500 id='DXV' onChange='doChange()'></input></td>
+            <td>&nbsp;</td>
+          </tr>
+          <tr>
+            <th>Vert. Displacement: </th>
+            <td><input type=number min=0 max=10000 step=500 id='DYV' onChange='doChange()'></input></td>
+            <td>&nbsp;</td>
+          </tr>
+
+          <tr class='divider'>
+            <td colspan=3>&nbsp;</td>
+          </tr>
+          <tr>
+          <td colspan=3><button id="savePNG" onClick="saveCanvasAsImage()">Save image</button></td>
+          </tr>
+
         </table>
       </td>
     </tr>
