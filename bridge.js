@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// This version dated 2023/10/03.
+// This version dated 2023/10/09.
 
 var canvas;
 var context;
@@ -25,11 +25,11 @@ var R1 = 0;
 var R2 = 0;
 var R3 = 0;
 var R4 = 0;
-var G1 = 50;
-var G2 = 50;
-var G3 = 50;
-var G4 = 50;
-var Z0 = 100000;
+var G1 = 20;
+var G2 = 20;
+var G3 = 20;
+var G4 = 20;
+var Z0 = 10000;
 var I0 = 2000;
 var Z1 = 2000;
 var Z2 = 10000;
@@ -52,15 +52,31 @@ var DY4 = 0;
 var DXV = 0;
 var DYV = 0;
 var R0 = 500;
-var DX = 1e-4;
-var DY = 1e-4;
-
-// To remind myself: Naive calculation of luminosity doesn't work as the
-// sizes of pixels/surface elements change as a result of diverging and
-// converging light rays, so we'd be comparing apples and oranges.
-
+var doLum = 0;
 var l0 = 0;
 var L0 = 0;
+
+function formatFloat(val, prec)
+{
+  if (val == 0) return '0';
+  let power = Math.floor(Math.log10(Math.abs(val)));
+  if (power > prec || power < -prec)
+  {
+    let expStr = val.toExponential(prec);
+    let [coef, exp] = expStr.split('e');
+    coef = coef.replace(/\.?0+$/, '');
+    exp = exp.replace('+', '');
+    return `${coef}e${exp}`;
+  }
+  else
+  {
+    let strVal = val.toFixed(prec);
+    let parts = strVal.split('.');
+    let intPart = parts[0];
+    let fracPart = parts.length > 1 ? parts[1].replace(/0+$/, '') : '';
+    return fracPart.length > 0 ? `${intPart}.${fracPart}` : intPart;
+  }
+}
 
 function saveAll()
 {
@@ -127,6 +143,8 @@ function loadAll()
   {
     let file = fileInput.files[0];
     fileName = file.name.replace(/.json$/,"");
+    document.title = fileName;
+    document.getElementById('theTitle').innerText = fileName;
     let reader = new FileReader();
     reader.addEventListener("load", () =>
     {
@@ -182,37 +200,37 @@ function loadAll()
 
 function doUpdate()
 {
-  document.getElementById('G1').value = G1;
-  document.getElementById('G2').value = G2;
-  document.getElementById('R1').value = R1;
-  document.getElementById('R2').value = R2;
-  document.getElementById('Z1').value = Z1;
-  document.getElementById('Z2').value = Z2;
-  document.getElementById('I1').value = I1;
-  document.getElementById('I2').value = I2;
-  document.getElementById('G3').value = G3;
-  document.getElementById('G4').value = G4;
-  document.getElementById('R3').value = R3;
-  document.getElementById('R4').value = R4;
-  document.getElementById('Z3').value = Z3;
-  document.getElementById('Z4').value = Z4;
-  document.getElementById('I3').value = I3;
-  document.getElementById('I4').value = I4;
-  document.getElementById('DX0').value = DX0;
-  document.getElementById('DY0').value = DY0;
-  document.getElementById('DX1').value = DX1;
-  document.getElementById('DY1').value = DY1;
-  document.getElementById('DX2').value = DX2;
-  document.getElementById('DY2').value = DY2;
-  document.getElementById('DX3').value = DX3;
-  document.getElementById('DY3').value = DY3;
-  document.getElementById('DX4').value = DX4;
-  document.getElementById('DY4').value = DY4;
-  document.getElementById('DXV').value = DXV;
-  document.getElementById('DYV').value = DYV;
-  document.getElementById('R0').value = R0;
-  document.getElementById('I0').value = I0;
-  document.getElementById('Z0').value = Z0;
+  document.getElementById('G1').value = formatFloat(G1,4);
+  document.getElementById('G2').value = formatFloat(G2,4);
+  document.getElementById('R1').value = formatFloat(R1,4);
+  document.getElementById('R2').value = formatFloat(R2,4);
+  document.getElementById('Z1').value = formatFloat(Z1,4);
+  document.getElementById('Z2').value = formatFloat(Z2,4);
+  document.getElementById('I1').value = formatFloat(I1,4);
+  document.getElementById('I2').value = formatFloat(I2,4);
+  document.getElementById('G3').value = formatFloat(G3,4);
+  document.getElementById('G4').value = formatFloat(G4,4);
+  document.getElementById('R3').value = formatFloat(R3,4);
+  document.getElementById('R4').value = formatFloat(R4,4);
+  document.getElementById('Z3').value = formatFloat(Z3,4);
+  document.getElementById('Z4').value = formatFloat(Z4,4);
+  document.getElementById('I3').value = formatFloat(I3,4);
+  document.getElementById('I4').value = formatFloat(I4,4);
+  document.getElementById('DX0').value = formatFloat(DX0,4);
+  document.getElementById('DY0').value = formatFloat(DY0,4);
+  document.getElementById('DX1').value = formatFloat(DX1,4);
+  document.getElementById('DY1').value = formatFloat(DY1,4);
+  document.getElementById('DX2').value = formatFloat(DX2,4);
+  document.getElementById('DY2').value = formatFloat(DY2,4);
+  document.getElementById('DX3').value = formatFloat(DX3,4);
+  document.getElementById('DY3').value = formatFloat(DY3,4);
+  document.getElementById('DX4').value = formatFloat(DX4,4);
+  document.getElementById('DY4').value = formatFloat(DY4,4);
+  document.getElementById('DXV').value = formatFloat(DXV,4);
+  document.getElementById('DYV').value = formatFloat(DYV,4);
+  document.getElementById('R0').value = formatFloat(R0,4);
+  document.getElementById('I0').value = formatFloat(I0,4);
+  document.getElementById('Z0').value = formatFloat(Z0,4);
 }
 
 function doChange()
@@ -256,6 +274,7 @@ function doChange()
     DXV = 1*document.getElementById('DXV').value;
     DYV = 1*document.getElementById('DYV').value;
     R0 = 1*document.getElementById('R0').value;
+
     let l = drawImagePixelByPixel();
 
     if (model == 1) { L0 = l.L; l0 = l.l };
@@ -302,7 +321,7 @@ function doChange()
 function getObject(x, y)
 {
   let r = Math.sqrt(x*x + y*y);
-  let l = r < R0 ? Math.cos(r*Math.PI/2/R0) * 255 : 0;
+  let l = r < R0 ? Math.cos(r*Math.PI/2/R0) : 0;
   return l;
 }
 
@@ -310,10 +329,12 @@ function getColorAtPixel(x, y)
 {
   let l = 0;
   let L = 0;
-  let theta;
-  let b, b1, b2, b3;
+  let theta1, theta2, theta3, theta4;
+  let b1, b2, b3, b4;
   let x0, y0;
-  let dx, dy;
+  let x1, x2, x3, x4;
+  let y1, y2, y3, y4;
+  let J = 1;
 
   x = (x-R)*(2*R)/canvas.width;
   y = (y-R)*(2*R)/canvas.height;
@@ -321,85 +342,300 @@ function getColorAtPixel(x, y)
   switch (1*model)
   {
   case 1: // Unobstructed object
-    x = x*Z0/I0 - DX0 + DXV;
-    y = y*Z0/I0 - DY0 + DYV;
-    l = getObject(x, y);
-    L = l * Z0*Z0/I0/I0;
+    x0 = x*Z0/I0;
+    y0 = y*Z0/I0;
+
+    l = getObject(x0 - DX0 + DXV, y0 - DY0 + DYV);
+    J = (Z0/I0)**2;
+    L = l*J;
+
     break;
 
   case 2: // Single lens
 
-    // Initial scaling for viewing distance
-    x0 = x * I1/I0;
-    y0 = y * I1/I0;
+    // Location in lens plane
+    x1 = x * I1/I0;
+    y1 = y * I1/I0;
 
     // Impact parameter
-    b = Math.sqrt((x0 - DX1 + DXV)**2 + (y0 - DY1 + DYV)**2);
-    theta = G1/b;
-    if (b > R1 && Math.abs(theta) < Math.PI/4)
+    b1 = Math.sqrt((x1 - DX1 + DXV)**2 + (y1 - DY1 + DYV)**2);
+    theta1 = 2*G1/b1;
+    if (b1 > R1 && Math.abs(theta1) < Math.PI/4)
     {
-      x0 = x + x0*(Z1+I1)/I1 - (x0-DX1 + DXV)/b*Z1*Math.tan(theta);
-      y0 = y + y0*(Z1+I1)/I1 - (y0-DY1 + DYV)/b*Z1*Math.tan(theta);
+      x0 = x1 + x*Z1/I0 - (x1-DX1 + DXV)/b1*Z1*Math.tan(theta1);
+      y0 = y1 + y*Z1/I0 - (y1-DY1 + DYV)/b1*Z1*Math.tan(theta1);
 
       l = getObject(x0 - DX0 + DXV, y0 - DY0 + DYV);
-      L = l;
+
+      if (doLum > 0)
+      {
+/*
+  -- Jacobian determinant generated using Maxima:
+
+  x1:x*I1/I0;
+  y1:y*I1/I0;
+  b1:sqrt((x1-DX1+DXV)^2+(y1-DY1+DYV)^2);
+  t1:2*G1/b1;
+  x0:x1+x*Z1/I0-(x1-DX1+DXV)/b1*Z1*tan(t1);
+  y0:y1+y*Z1/I0-(y1-DY1+DYV)/b1*Z1*tan(t1);
+  string(diff(x0,x)*diff(y0,y)-diff(x0,y)*diff(y0,x));
+
+ */
+        J = (-((I1*Z1*Math.tan((2*G1)/Math.sqrt(((I1*y)/I0+DYV-DY1)**2+((I1*x)/I0+DXV-DX1)**2))
+)/(I0*Math.sqrt(((I1*y)/I0+DYV-DY1)**2+((I1*x)/I0+DXV-DX1)**2)))-(I1*Z1*(-((I1*x)/I0)
+-DXV+DX1)*((I1*x)/I0+DXV-DX1)*Math.tan((2*G1)/Math.sqrt(((I1*y)/I0+DYV-DY1)**2+((I1*x)/I0
++DXV-DX1)**2)))/(I0*(((I1*y)/I0+DYV-DY1)**2+((I1*x)/I0+DXV-DX1)**2)**(3/2))-(2*G1*
+I1*Z1*(-((I1*x)/I0)-DXV+DX1)*((I1*x)/I0+DXV-DX1)/Math.cos((2*G1)/Math.sqrt(((I1*y)/I0+DYV
+-DY1)**2+((I1*x)/I0+DXV-DX1)**2))**2)/(I0*(((I1*y)/I0+DYV-DY1)**2+((I1*x)/I0+DXV-
+DX1)**2)**2)+Z1/I0+I1/I0)*(-((I1*Z1*Math.tan((2*G1)/Math.sqrt(((I1*y)/I0+DYV-DY1)**2+((I1*x
+)/I0+DXV-DX1)**2)))/(I0*Math.sqrt(((I1*y)/I0+DYV-DY1)**2+((I1*x)/I0+DXV-DX1)**2)))-(I1
+*Z1*(-((I1*y)/I0)-DYV+DY1)*((I1*y)/I0+DYV-DY1)*Math.tan((2*G1)/Math.sqrt(((I1*y)/I0+DYV-
+DY1)**2+((I1*x)/I0+DXV-DX1)**2)))/(I0*(((I1*y)/I0+DYV-DY1)**2+((I1*x)/I0+DXV-DX1)
+**2)**(3/2))-(2*G1*I1*Z1*(-((I1*y)/I0)-DYV+DY1)*((I1*y)/I0+DYV-DY1)/Math.cos((2*G1)/
+Math.sqrt(((I1*y)/I0+DYV-DY1)**2+((I1*x)/I0+DXV-DX1)**2))**2)/(I0*(((I1*y)/I0+DYV-DY1)**
+2+((I1*x)/I0+DXV-DX1)**2)**2)+Z1/I0+I1/I0)-(-((I1*Z1*((I1*x)/I0+DXV-DX1)*(-((I1*
+y)/I0)-DYV+DY1)*Math.tan((2*G1)/Math.sqrt(((I1*y)/I0+DYV-DY1)**2+((I1*x)/I0+DXV-DX1)**2)))
+/(I0*(((I1*y)/I0+DYV-DY1)**2+((I1*x)/I0+DXV-DX1)**2)**(3/2)))-(2*G1*I1*Z1*((I1*x)
+/I0+DXV-DX1)*(-((I1*y)/I0)-DYV+DY1)/Math.cos((2*G1)/Math.sqrt(((I1*y)/I0+DYV-DY1)**2+((I1
+*x)/I0+DXV-DX1)**2))**2)/(I0*(((I1*y)/I0+DYV-DY1)**2+((I1*x)/I0+DXV-DX1)**2)**2))*(
+-((I1*Z1*(-((I1*x)/I0)-DXV+DX1)*((I1*y)/I0+DYV-DY1)*Math.tan((2*G1)/Math.sqrt(((I1*y)/I0
++DYV-DY1)**2+((I1*x)/I0+DXV-DX1)**2)))/(I0*(((I1*y)/I0+DYV-DY1)**2+((I1*x)/I0+DXV
+-DX1)**2)**(3/2)))-(2*G1*I1*Z1*(-((I1*x)/I0)-DXV+DX1)*((I1*y)/I0+DYV-DY1)/Math.cos((2
+*G1)/Math.sqrt(((I1*y)/I0+DYV-DY1)**2+((I1*x)/I0+DXV-DX1)**2))**2)/(I0*(((I1*y)/I0+DYV
+-DY1)**2+((I1*x)/I0+DXV-DX1)**2)**2));
+
+        if (J <= 0) J = 0;
+      }
+      L = l*J;
+
     }
     break;
 
   case 3: // Bridge
 
-    // Initial scaling for viewing distance
-    x0 = x * I2/I0;
-    y0 = y * I2/I0;
+    x2 = x * I2/I0;
+    y2 = y * I2/I0;
 
-    // Impact parameter
-    b = Math.sqrt((x0 - DX2 + DXV)**2 + (y0 - DY2 + DYV)**2);
-    theta = G2/b;
-    if (b > R2 && Math.abs(theta) < Math.PI/4)
+    b2 = Math.sqrt((x2 - DX2 + DXV)**2 + (y2 - DY2 + DYV)**2);
+    theta2 = 2*G2/b2;
+    if (b2 > R2 && Math.abs(theta2) < Math.PI/4)
     {
-      x0 = x + x0*(Z2+I2)/I2 - (x0-DX2 + DXV)/b*Z2*Math.tan(theta);
-      y0 = y + y0*(Z2+I2)/I2 - (y0-DY2 + DYV)/b*Z2*Math.tan(theta);
+      x1 = x2 + x*Z2/I0 - (x2-DX2 + DXV)/b2*Z2*Math.tan(theta2);
+      y1 = y2 + y*Z2/I0 - (y2-DY2 + DYV)/b2*Z2*Math.tan(theta2);
 
-      b = Math.sqrt((x0 - DX1 + DXV)**2 + (y0 - DY1 + DYV)**2);
-      theta = G1/b;
-      if (b > R1 && Math.abs(theta) < Math.PI/4)
+      b1 = Math.sqrt((x1 - DX1 + DXV)**2 + (y1 - DY1 + DYV)**2);
+      theta1 = 2*G1/b1;
+      if (b1 > R1 && Math.abs(theta1) < Math.PI/4)
       {
-        x0 = x + x0*(Z1+Z2+I2)/(Z2+I2)  - (x0-DX1 + DXV)/b*Z1*Math.tan(theta);
-        y0 = y + y0*(Z1+Z2+I2)/(Z2+I2)  - (y0-DY1 + DYV)/b*Z1*Math.tan(theta);
+        x0 = x1 + x*Z1/I0 - (x2-DX2+DXV)/b2*Z1*Math.tan(theta2) - (x1-DX1+DXV)/b1*Z1*Math.tan(theta1);
+        y0 = y1 + y*Z1/I0 - (y2-DY2+DYV)/b2*Z1*Math.tan(theta2) - (y1-DY1+DYV)/b1*Z1*Math.tan(theta1);
 
         l = getObject(x0 - DX0 + DXV, y0 - DY0 + DYV);
-        L = l;
+        if (doLum > 0)
+        {
+/*
+  -- Jacobian determinant generated using Maxima:
+
+  x2:x*I2/I0;
+  y2:y*I2/I0;
+  b2:sqrt((x2-DX2+DXV)^2+(y2-DY2+DYV)^2);
+  theta2:2*G2/b2;
+  x1:x2+x*Z2/I0-(x2-DX2+DXV)/b2*Z2*tan(theta2);
+  y1:y2+y*Z2/I0-(y2-DY2+DYV)/b2*Z2*tan(theta2);
+  b1:sqrt((x1-DX1+DXV)^2+(y1-DY1+DYV)^2);
+  theta1:2*G1/b1;
+  x0:x1+x*Z1/I0-(x2-DX2+DXV)/b2*Z1*tan(theta2)-(x1-DX1+DXV)/b1*Z1*tan(theta1);
+  y0:y1+y*Z1/I0-(y2-DY2+DYV)/b2*Z1*tan(theta2)-(y1-DY1+DYV)/b1*Z1*tan(theta1);
+  string(diff(x0,x)*diff(y0,y)-diff(x0,y)*diff(y0,x));
+*/
+
+          J = ((Z1*((I2*Z2*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))+(I2*Z2*(-((I2*x)/I0)-
+DXV+DX2)*((I2*x)/I0+DXV-DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2))+(2*G2*I2*Z2
+*(-((I2*x)/I0)-DXV+DX2)*((I2*x)/I0+DXV-DX2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)
+**2)-Z2/I0-I2/I0)*Math.tan((2*G1)/Math.sqrt(((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/
+I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)**2+((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2
+)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1)**2)))/Math.sqrt(((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt
+(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)**2+((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV
+-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1)**2)-(Z1*(-((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-
+DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))-(Z2*x)/I0-(I2*x)/I0-DXV+DX1)*(2*(-((I2*Z2*((I2*x)/I0+DXV-DX2)*(-((I2*y)/I0)-
+DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2)))-(2*G2*I2*Z2*((I2*x)/I0+DXV-DX2
+)*(-((I2*y)/I0)-DYV+DY2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2))*((Z2*(-((I2*y)
+/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)+2*(
+-((I2*Z2*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))-(I2*Z2*(-((I2*x)/I0)-DXV+DX2)*(
+(I2*x)/I0+DXV-DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2))-(2*G2*I2*Z2*(-((I2*x
+)/I0)-DXV+DX2)*((I2*x)/I0+DXV-DX2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2)+Z2/I0+
+I2/I0)*((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(
+I2*x)/I0+DXV-DX1))*Math.tan((2*G1)/Math.sqrt(((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x
+)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)**2+((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-
+DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1)**2)))/(2*(((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/
+Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)**2+((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV
+-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1)**2)**(3/2))-(G1*Z1*(-((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2
+*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))-(Z2*x)/I0-(I2*x)/I0-DXV+DX1)*(2*(-((I2*Z2*((I2*x)/I0+DXV-DX2)*(-(
+(I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2)))-(2*G2*I2*Z2*((I2*x
+)/I0+DXV-DX2)*(-((I2*y)/I0)-DYV+DY2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2))*((Z2
+*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV
+-DY1)+2*(-((I2*Z2*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))-(I2*Z2*(-((I2*x)/I0)
+-DXV+DX2)*((I2*x)/I0+DXV-DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2))-(2*G2*I2*
+Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*x)/I0+DXV-DX2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2
+)**2)+Z2/I0+I2/I0)*((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+
+(Z2*x)/I0+(I2*x)/I0+DXV-DX1))/Math.cos((2*G1)/Math.sqrt(((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2
+)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)**2+((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2
+*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1)**2))**2)/(((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-
+DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)**2+((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((
+I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1)**2)**2-(I2*Z2*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)
+/I0+DXV-DX2)**2)))/(I0*Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))-(I2*Z1*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*Math.sqrt(((I2*y)
+/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))-(I2*Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*x)/I0+DXV-DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((
+I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2))-(I2*Z1*(-((I2*x)/I0)-DXV+DX2)*((I2*x)/I0+DXV-DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2
+)))/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2))-(2*G2*I2*Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*x)/I0+DXV-DX2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*
+x)/I0+DXV-DX2)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2)-(2*G2*I2*Z1*(-((I2*x)/I0)-DXV+DX2)*((I2*x)/I0+DXV-DX2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV
+-DY2)**2+((I2*x)/I0+DXV-DX2)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2)+Z2/I0+Z1/I0+I2/I0)*((Z1*((I2*Z2*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+
+((I2*x)/I0+DXV-DX2)**2)))/(I0*Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))+(I2*Z2*(-((I2*y)/I0)-DYV+DY2)*((I2*y)/I0+DYV-DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV
+-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2))+(2*G2*I2*Z2*(-((I2*y)/I0)-DYV+DY2)*((I2*y)/I0+DYV-DY2)/Math.cos((2*G2)/Math.sqrt
+(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2)-Z2/I0-I2/I0)*Math.tan((2*G1)/Math.sqrt(((Z2*(-((I2*y)/I0)-DYV+DY2
+)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)**2+((Z2*(-((I2*
+x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1)**2
+)))/Math.sqrt(((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0
++(I2*y)/I0+DYV-DY1)**2+((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)
+**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1)**2)-(Z1*(-((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2
++((I2*x)/I0+DXV-DX2)**2))-(Z2*y)/I0-(I2*y)/I0-DYV+DY1)*(2*(-((I2*Z2*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*Math.sqrt(((I2*y)/I0+DYV-DY2)**
+2+((I2*x)/I0+DXV-DX2)**2)))-(I2*Z2*(-((I2*y)/I0)-DYV+DY2)*((I2*y)/I0+DYV-DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2*y)/I0+DYV
+-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2))-(2*G2*I2*Z2*(-((I2*y)/I0)-DYV+DY2)*((I2*y)/I0+DYV-DY2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))**2)/(
+I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2)+Z2/I0+I2/I0)*((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt
+(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)+2*(-((I2*Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*y)/I0+DYV-DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV
+-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2)))-(2*G2*I2*Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*y)/I0+DYV-DY2)/Math.cos((2*G2)/
+Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2))*((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)
+/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1))*Math.tan((2*G1)/Math.sqrt(((Z2*(-((I2*y)/I0)-DYV+
+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)**2+((Z2*(-((I2
+*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1)
+**2)))/(2*(((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0
++(I2*y)/I0+DYV-DY1)**2+((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2
+)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1)**2)**(3/2))-(G1*Z1*(-((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0
++DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))-(Z2*y)/I0-(I2*y)/I0-DYV+DY1)*(2*(-((I2*Z2*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*Math.sqrt(((I2*y)/I0
++DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))-(I2*Z2*(-((I2*y)/I0)-DYV+DY2)*((I2*y)/I0+DYV-DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2
+*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2))-(2*G2*I2*Z2*(-((I2*y)/I0)-DYV+DY2)*((I2*y)/I0+DYV-DY2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2
+)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2)+Z2/I0+I2/I0)*((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2
+)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)+2*(-((I2*Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*y)/I0+DYV-DY2)*Math.tan((2*G2)/Math.sqrt((
+(I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2)))-(2*G2*I2*Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*y)/I0+DYV-DY2)/
+Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2))*((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt
+(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1))/Math.cos((2*G1)/Math.sqrt(((Z2*(-((I2*
+y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)**2
++((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/
+I0+DXV-DX1)**2))**2)/(((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2
+)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)**2+((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/
+I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1)**2)**2-(I2*Z2*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0
++DXV-DX2)**2))-(I2*Z1*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))-(I2*Z2*(-((I2*y)/I0
+)-DYV+DY2)*((I2*y)/I0+DYV-DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2))-(I2*Z1*(
+-((I2*y)/I0)-DYV+DY2)*((I2*y)/I0+DYV-DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2
+))-(2*G2*I2*Z2*(-((I2*y)/I0)-DYV+DY2)*((I2*y)/I0+DYV-DY2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0
++DXV-DX2)**2)**2)-(2*G2*I2*Z1*(-((I2*y)/I0)-DYV+DY2)*((I2*y)/I0+DYV-DY2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2
+)**2+((I2*x)/I0+DXV-DX2)**2)**2)+Z2/I0+Z1/I0+I2/I0)-((Z1*((I2*Z2*((I2*x)/I0+DXV-DX2)*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-
+DX2)**2)))/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2))+(2*G2*I2*Z2*((I2*x)/I0+DXV-DX2)*(-((I2*y)/I0)-DYV+DY2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2
++((I2*x)/I0+DXV-DX2)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2))*Math.tan((2*G1)/Math.sqrt(((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2
+)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)**2+((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2
+*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1)**2)))/Math.sqrt(((Z2*(-((I2*y)/I0)-DYV+DY2)
+*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)**2+((Z2*(-((I2*x)
+/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1)**2)-
+(Z1*(-((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))-(Z2*y)/I0-(
+I2*y)/I0-DYV+DY1)*(2*(-((I2*Z2*((I2*x)/I0+DXV-DX2)*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2*y)/I0+DYV-DY2
+)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2)))-(2*G2*I2*Z2*((I2*x)/I0+DXV-DX2)*(-((I2*y)/I0)-DYV+DY2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))**2)/(I0
+*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2))*((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV
+-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)+2*(-((I2*Z2*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*Math.sqrt(((I2*y)/I0+DYV
+-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))-(I2*Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*x)/I0+DXV-DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2*y)
+/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2))-(2*G2*I2*Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*x)/I0+DXV-DX2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2
+))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2)+Z2/I0+I2/I0)*((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2
+)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1))*Math.tan((2*G1)/Math.sqrt(((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-
+DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)**2+((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((
+I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1)**2)))/(2*(((Z2*(-((I2*y)/I0)-DYV+DY2
+)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)**2+((Z2*(-((I2*x
+)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1)**2)
+**(3/2))-(G1*Z1*(-((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))-
+(Z2*y)/I0-(I2*y)/I0-DYV+DY1)*(2*(-((I2*Z2*((I2*x)/I0+DXV-DX2)*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2*y
+)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2)))-(2*G2*I2*Z2*((I2*x)/I0+DXV-DX2)*(-((I2*y)/I0)-DYV+DY2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)
+**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2))*((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt((
+(I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)+2*(-((I2*Z2*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*Math.sqrt(((
+I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))-(I2*Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*x)/I0+DXV-DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(
+I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2))-(2*G2*I2*Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*x)/I0+DXV-DX2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0
++DXV-DX2)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2)+Z2/I0+I2/I0)*((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0
++DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1))/Math.cos((2*G1)/Math.sqrt(((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2
+*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)**2+((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*
+G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1)**2))**2)/(((Z2*(-((I2*y)/I0
+)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)**2+((Z2
+*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV
+-DX1)**2)**2-(I2*Z2*((I2*x)/I0+DXV-DX2)*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x
+)/I0+DXV-DX2)**2)**(3/2))-(I2*Z1*((I2*x)/I0+DXV-DX2)*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2*y)/I0+DYV-DY2
+)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2))-(2*G2*I2*Z2*((I2*x)/I0+DXV-DX2)*(-((I2*y)/I0)-DYV+DY2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))**2)/(I0*
+(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2)-(2*G2*I2*Z1*((I2*x)/I0+DXV-DX2)*(-((I2*y)/I0)-DYV+DY2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2
+)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2))*((Z1*((I2*Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*y)/I0+DYV-DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+(
+(I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2))+(2*G2*I2*Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*y)/I0+DYV-DY2)/Math.cos((2*G2)/Math.sqrt(((I2*y)
+/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2))*Math.tan((2*G1)/Math.sqrt(((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2
+*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)**2+((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2
+*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1)**2)))/Math.sqrt(((Z2*(-((I2*y
+)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)**2+
+((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0
++DXV-DX1)**2)-(Z1*(-((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2
+))-(Z2*x)/I0-(I2*x)/I0-DXV+DX1)*(2*(-((I2*Z2*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**
+2)))-(I2*Z2*(-((I2*y)/I0)-DYV+DY2)*((I2*y)/I0+DYV-DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV
+-DX2)**2)**(3/2))-(2*G2*I2*Z2*(-((I2*y)/I0)-DYV+DY2)*((I2*y)/I0+DYV-DY2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2
+)**2+((I2*x)/I0+DXV-DX2)**2)**2)+Z2/I0+I2/I0)*((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**
+2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)+2*(-((I2*Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*y)/I0+DYV-DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV
+-DX2)**2)))/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2)))-(2*G2*I2*Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*y)/I0+DYV-DY2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2
+)**2+((I2*x)/I0+DXV-DX2)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2))*((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)
+/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1))*Math.tan((2*G1)/Math.sqrt(((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt((
+(I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)**2+((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan(
+(2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1)**2)))/(2*(((Z2*(-((I2*
+y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)**2
++((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/
+I0+DXV-DX1)**2)**(3/2))-(G1*Z1*(-((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0
++DXV-DX2)**2))-(Z2*x)/I0-(I2*x)/I0-DXV+DX1)*(2*(-((I2*Z2*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0
++DXV-DX2)**2)))-(I2*Z2*(-((I2*y)/I0)-DYV+DY2)*((I2*y)/I0+DYV-DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2
+*x)/I0+DXV-DX2)**2)**(3/2))-(2*G2*I2*Z2*(-((I2*y)/I0)-DYV+DY2)*((I2*y)/I0+DYV-DY2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))**2)/(I0*(((I2*y)
+/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2)+Z2/I0+I2/I0)*((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0
++DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)+2*(-((I2*Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*y)/I0+DYV-DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+(
+(I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2)))-(2*G2*I2*Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*y)/I0+DYV-DY2)/Math.cos((2*G2)/Math.sqrt(((I2*y
+)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2))*((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2
+)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1))/Math.cos((2*G1)/Math.sqrt(((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2
+*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+DYV-DY1)**2+((Z2*(-((I2*x)/I0)-DXV
++DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/I0+(I2*x)/I0+DXV-DX1)**2))**2)/(((
+Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*y)/I0+(I2*y)/I0+
+DYV-DY1)**2+((Z2*(-((I2*x)/I0)-DXV+DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)+(Z2*x)/
+I0+(I2*x)/I0+DXV-DX1)**2)**2-(I2*Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*y)/I0+DYV-DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2*y)/I0+DYV
+-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2))-(I2*Z1*(-((I2*x)/I0)-DXV+DX2)*((I2*y)/I0+DYV-DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2
+*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2))-(2*G2*I2*Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*y)/I0+DYV-DY2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2
+)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2)-(2*G2*I2*Z1*(-((I2*x)/I0)-DXV+DX2)*((I2*y)/I0+DYV-DY2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2
+*x)/I0+DXV-DX2)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2));
+
+          if (J <= 0) J = 0;
+        }
+        L = l*J;
       }
     }
     break;
 
   case 4: // Triple lens
 
-    // Initial scaling for viewing distance
-    x0 = x * I3/I0;
-    y0 = y * I3/I0;
+    x3 = x * I3/I0;
+    y3 = y * I3/I0;
 
-    // Impact parameter
-    b = Math.sqrt((x0 - DX3 + DXV)**2 + (y0 - DY3 + DYV)**2);
-    theta = G3/b;
-    if (b > R3 && Math.abs(theta) < Math.PI/4)
+    b3 = Math.sqrt((x3 - DX3 + DXV)**2 + (y3 - DY3 + DYV)**2);
+    theta3 = 2*G3/b3;
+    if (b3 > R3 && Math.abs(theta3) < Math.PI/4)
     {
-      x0 = x + x0*(Z3+I3)/I3 - (x0-DX3 + DXV)/b*Z3*Math.tan(theta);
-      y0 = y + y0*(Z3+I3)/I3 - (y0-DY3 + DYV)/b*Z3*Math.tan(theta);
+      x2 = x3 + x*Z3/I0 - (x3-DX3 + DXV)/b3*Z3*Math.tan(theta3);
+      y2 = y3 + y*Z3/I0 - (y3-DY3 + DYV)/b3*Z3*Math.tan(theta3);
 
-      b = Math.sqrt((x0 - DX2 + DXV)**2 + (y0 - DY2 + DYV)**2);
-      theta = G2/b;
-      if (b > R2 && Math.abs(theta) < Math.PI/4)
+      b2 = Math.sqrt((x2 - DX2 + DXV)**2 + (y2 - DY2 + DYV)**2);
+      theta2 = 2*G2/b2;
+      if (b2 > R2 && Math.abs(theta2) < Math.PI/4)
       {
-        x0 = x + x0*(Z2+Z3+I3)/(Z3+I3)  - (x0-DX2 + DXV)/b*Z2*Math.tan(theta);
-        y0 = y + y0*(Z2+Z3+I3)/(Z3+I3)  - (y0-DY2 + DYV)/b*Z2*Math.tan(theta);
+        x1 = x2 + x*Z2/I0  - (x3-DX3+DXV)/b3*Z2*Math.tan(theta3) - (x2-DX2 + DXV)/b2*Z2*Math.tan(theta2);
+        y1 = y2 + y*Z2/I0  - (y3-DY3+DYV)/b3*Z2*Math.tan(theta3) - (y2-DY2 + DYV)/b2*Z2*Math.tan(theta2);
 
-        b = Math.sqrt((x0 - DX1 + DXV)**2 + (y0 - DY1 + DYV)**2);
-        theta = G1/b;
-        if (b > R1 && Math.abs(theta) < Math.PI/4)
+        b1 = Math.sqrt((x1 - DX1 + DXV)**2 + (y1 - DY1 + DYV)**2);
+        theta1 = 2*G1/b1;
+        if (b1 > R1 && Math.abs(theta1) < Math.PI/4)
         {
-          x0 = x + x0*(Z1+Z2+Z3+I3)/(Z2+Z3+I3) - (x0-DX1 + DXV)/b*Z1*Math.tan(theta);
-          y0 = y + y0*(Z1+Z2+Z3+I3)/(Z2+Z3+I3) - (y0-DY1 + DYV)/b*Z1*Math.tan(theta);
+          x0 = x1 + x*Z1/I0 - (x3-DX3+DXV)/b3*Z1*Math.tan(theta3) - (x2-DX2+DXV)/b2*Z3*Math.tan(theta2) - (x1-DX1 + DXV)/b1*Z1*Math.tan(theta1);
+          y0 = y1 + y*Z1/I0 - (y3-DY3+DYV)/b3*Z1*Math.tan(theta3) - (y2-DY2+DYV)/b2*Z3*Math.tan(theta2) - (y1-DY1 + DYV)/b1*Z1*Math.tan(theta1);
 
           l = getObject(x0 - DX0 + DXV, y0 - DY0 + DYV);
           L = l;
@@ -410,41 +646,39 @@ function getColorAtPixel(x, y)
 
   case 5: // Quadruple lens
 
-    // Initial scaling for viewing distance
-    x0 = x * I4/I0;
-    y0 = y * I4/I0;
+    x4 = x * I4/I0;
+    y4 = y * I4/I0;
 
-    // Impact parameter
-    b = Math.sqrt((x0 - DX4 + DXV)**2 + (y0 - DY4 + DYV)**2);
-    theta = G4/b;
-    if (b > R4 && Math.abs(theta) < Math.PI/4)
+    b4 = Math.sqrt((x4 - DX4 + DXV)**2 + (y4 - DY4 + DYV)**2);
+    theta4 = 2 * G4/b4;
+    if (b4 > R4 && Math.abs(theta4) < Math.PI/4)
     {
-      x0 = x + x0*(Z4+I4)/I4 - (x0-DX4 + DXV)/b*Z4*Math.tan(theta);
-      y0 = y + y0*(Z4+I4)/I4 - (y0-DY4 + DYV)/b*Z4*Math.tan(theta);
+      x3 = x4 + x*Z4/I0 - (x4-DX4 + DXV)/b4*Z4*Math.tan(theta4);
+      y3 = y4 + y*Z4/I0 - (y4-DY4 + DYV)/b4*Z4*Math.tan(theta4);
 
-      b = Math.sqrt((x0 - DX3 + DXV)**2 + (y0 - DY3 + DYV)**2);
-      theta = G3/b;
-      if (b > R3 && Math.abs(theta) < Math.PI/4)
+      b3 = Math.sqrt((x3 - DX3 + DXV)**2 + (y3 - DY3 + DYV)**2);
+      theta3 = 2*G3/b3;
+      if (b3 > R3 && Math.abs(theta3) < Math.PI/4)
       {
-        x0 = x + x0*(Z3+Z4+I4)/(Z4+I4)  - (x0-DX3 + DXV)/b*Z3*Math.tan(theta);
-        y0 = y + y0*(Z3+Z4+I4)/(Z4+I4)  - (y0-DY3 + DYV)/b*Z3*Math.tan(theta);
+        x2 = x3 + x*Z3/I0  - (x4-DX4+DXV)/b4*Z3*Math.tan(theta4) - (x3-DX3 + DXV)/b3*Z3*Math.tan(theta3);
+        y2 = y3 + y*Z3/I0  - (y4-DY4+DYV)/b4*Z3*Math.tan(theta4) - (y3-DY3 + DYV)/b3*Z3*Math.tan(theta3);
 
-        b = Math.sqrt((x0 - DX2 + DXV)**2 + (y0 - DY2 + DYV)**2);
-        theta = G2/b;
-        if (b > R2 && Math.abs(theta) < Math.PI/4)
+        b2 = Math.sqrt((x2 - DX2 + DXV)**2 + (y2 - DY2 + DYV)**2);
+        theta2 = 2*G2/b2;
+        if (b2 > R2 && Math.abs(theta2) < Math.PI/4)
         {
-          x0 = x + x0*(Z2+Z3+Z4+I4)/(Z3+Z4+I4) - (x0-DX2 + DXV)/b*Z2*Math.tan(theta);
-          y0 = y + y0*(Z2+Z3+Z4+I4)/(Z3+Z4+I4) - (y0-DY2 + DYV)/b*Z2*Math.tan(theta);
+          x1 = x2 + x*Z2/I0 - (x4-DX4+DXV)/b4*Z2*Math.tan(theta4) - (x3-DX3+DXV)/b3*Z2*Math.tan(theta3) - (x2-DX2+DXV)/b2*Z2*Math.tan(theta2);
+          y1 = y2 + y*Z2/I0 - (y4-DY4+DYV)/b4*Z2*Math.tan(theta4) - (y3-DY3+DYV)/b3*Z2*Math.tan(theta3) - (y2-DY2+DYV)/b2*Z2*Math.tan(theta2);
 
-          b = Math.sqrt((x0 - DX1 + DXV)**2 + (y0 - DY1 + DYV)**2);
-          theta = G1/b;
-          if (b > R1 && Math.abs(theta) < Math.PI/4)
+          b1 = Math.sqrt((x1 - DX1 + DXV)**2 + (y1 - DY1 + DYV)**2);
+          theta1 = 2*G1/b1;
+          if (b1 > R1 && Math.abs(theta1) < Math.PI/4)
           {
-            x0 = x + x0*(Z1+Z2+Z3+Z4+I4)/(Z2+Z3+Z4+I4) - (x0-DX1 + DXV)/b*Z1*Math.tan(theta);
-            y0 = y + y0*(Z1+Z2+Z3+Z4+I4)/(Z2+Z3+Z4+I4) - (y0-DY1 + DYV)/b*Z1*Math.tan(theta);
+            x0 = x1 + x*Z1/I0 - (x4-DX4+DXV)/b4*Z1*Math.tan(theta4) - (x3-DX3+DXV)/b3*Z1*Math.tan(theta3) - (x2-DX2+DXV)/b2*Z1*Math.tan(theta2) - (x1-DX1+DXV)/b1*Z1*Math.tan(theta1);
+            y0 = y1 + y*Z1/I0 - (y4-DY4+DYV)/b4*Z1*Math.tan(theta4) - (y3-DY3+DYV)/b3*Z1*Math.tan(theta3) - (y2-DY2+DYV)/b2*Z1*Math.tan(theta2) - (y1-DY1+DYV)/b1*Z1*Math.tan(theta1);
 
             l = getObject(x0 - DX0 + DXV, y0 - DY0 + DYV);
-            L = l;
+          L = l;
           }
         }
       }
@@ -453,24 +687,49 @@ function getColorAtPixel(x, y)
 
   }
 
-  return {'l':l, 'L':L};
+  return {L:L, l:l};
 }
+
+var data = null;
 
 function drawImagePixelByPixel()
 {
   let l = 0;
   let L = 0;
+  let max = 1;
+
+  if (data == null) data = new Array(canvas.width * canvas.height);
+
   for (var x = 0; x < canvas.width; x++)
   {
     for (var y = 0; y < canvas.height; y++)
     {
       let lum = getColorAtPixel(x, y);
+      data[y * canvas.width + x] = lum.L;
+      if (max < lum.L) max = lum.L;
       l += lum.l;
       L += lum.L;
-      context.fillStyle = 'rgb(' + lum.l + ',' + lum.l + ',' + lum.l + ')';
-      context.fillRect(x, y, 1, 1);
     }
   }
+
+//  console.log("Scaling by " + (Z0/I0)**2/max);
+
+  let imageData = context.createImageData(canvas.width, canvas.height);
+  let image = imageData.data;
+
+  for (var x = 0; x < canvas.width; x++)
+  {
+    for (var y = 0; y < canvas.height; y++)
+    {
+      let i = (y*canvas.width + x);
+      let l = data[i] * 255 / max;
+      i *= 4;
+      image[i] = image[i+1] = image[i+2] = l;
+      image[i+3] = 255;
+    }
+  }
+  context.putImageData(imageData, 0, 0);
+
   return {'l':l, 'L':L};
 }
 
@@ -484,8 +743,8 @@ window.onload = function()
 
   if (params.get('lum'))
   {
-    let lum = params.get('lum');
-    if (lum*1 > 0)
+    doLum = params.get('lum') * 1;
+    if (doLum > 0)
     {
       document.getElementById('lumtr1').style.display = "";
       document.getElementById('lumtr2').style.display = "";

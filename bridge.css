@@ -31,11 +31,12 @@ body.waiting *
 .loadsave
 {
   float: right;
-  position: absolute;
-  right: 40px;
-  top: 40px;
+  position: relative;
+  right: 10px;
+  top: -40px;
   background-color: white;
   padding: 10px;
+  margin-bottom: -1.5em;
 }
 
 .version
@@ -47,7 +48,6 @@ body.waiting *
 
 .intro
 {
-  margin-bottom: 1.5em;
   max-width: 650px;
 }
 
@@ -82,4 +82,17 @@ body.waiting *
 .paramtable tr.divider td
 {
   height: 0.5em;
+}
+
+.savePNG
+{
+  position: relative;
+  right: 0px;
+  top: 10px;
+  margin: 10px;
+}
+
+.hdr th
+{
+  text-align: center !important;
 }
