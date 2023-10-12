@@ -318,11 +318,38 @@ function doChange()
   }, 0);
 }
 
+var canImg = null;
+var ctxImg = null;
+var lblImg = null;
+
 function getObject(x, y)
 {
+  if (lblImg != null)
+    return getImgObject(document.getElementById(lblImg), x, y);
   let r = Math.sqrt(x*x + y*y);
   let l = r < R0 ? Math.cos(r*Math.PI/2/R0) : 0;
-  return l;
+  return {r:l, g:l, b:l, J:1};
+}
+
+function getImgObject(img, x, y)
+{
+  if (canImg == null)
+  {
+    canImg = document.createElement('canvas');
+    canImg.width = img.width;
+    canImg.height = img.height;
+    ctxImg = canImg.getContext('2d');
+    ctxImg.drawImage(img, 0, 0);
+  }
+
+  // Get image data and pixel info
+  x += img.width/2;
+  y += img.height/2;
+  if (x < 0 || y < 0 || x >= img.width || y >= img.height) return {r:0, g:0, b:0};
+
+  var imgData = ctxImg.getImageData(x, y, 1, 1);
+  var pixel = imgData.data;
+  return { r: pixel[0], g: pixel[1], b: pixel[2], J:1 };
 }
 
 function getColorAtPixel(x, y)
@@ -346,8 +373,7 @@ function getColorAtPixel(x, y)
     y0 = y*Z0/I0;
 
     l = getObject(x0 - DX0 + DXV, y0 - DY0 + DYV);
-    J = (Z0/I0)**2;
-    L = l*J;
+    l.J = (Z0/I0)**2;
 
     break;
 
@@ -381,7 +407,7 @@ function getColorAtPixel(x, y)
   string(diff(x0,x)*diff(y0,y)-diff(x0,y)*diff(y0,x));
 
  */
-        J = (-((I1*Z1*Math.tan((2*G1)/Math.sqrt(((I1*y)/I0+DYV-DY1)**2+((I1*x)/I0+DXV-DX1)**2))
+        l.J = (-((I1*Z1*Math.tan((2*G1)/Math.sqrt(((I1*y)/I0+DYV-DY1)**2+((I1*x)/I0+DXV-DX1)**2))
 )/(I0*Math.sqrt(((I1*y)/I0+DYV-DY1)**2+((I1*x)/I0+DXV-DX1)**2)))-(I1*Z1*(-((I1*x)/I0)
 -DXV+DX1)*((I1*x)/I0+DXV-DX1)*Math.tan((2*G1)/Math.sqrt(((I1*y)/I0+DYV-DY1)**2+((I1*x)/I0
 +DXV-DX1)**2)))/(I0*(((I1*y)/I0+DYV-DY1)**2+((I1*x)/I0+DXV-DX1)**2)**(3/2))-(2*G1*
@@ -404,9 +430,8 @@ y)/I0)-DYV+DY1)*Math.tan((2*G1)/Math.sqrt(((I1*y)/I0+DYV-DY1)**2+((I1*x)/I0+DXV-
 *G1)/Math.sqrt(((I1*y)/I0+DYV-DY1)**2+((I1*x)/I0+DXV-DX1)**2))**2)/(I0*(((I1*y)/I0+DYV
 -DY1)**2+((I1*x)/I0+DXV-DX1)**2)**2));
 
-        if (J <= 0) J = 0;
+        if (l.J <= 0) l.J = 0;
       }
-      L = l*J;
 
     }
     break;
@@ -449,7 +474,7 @@ y)/I0)-DYV+DY1)*Math.tan((2*G1)/Math.sqrt(((I1*y)/I0+DYV-DY1)**2+((I1*x)/I0+DXV-
   string(diff(x0,x)*diff(y0,y)-diff(x0,y)*diff(y0,x));
 */
 
-          J = ((Z1*((I2*Z2*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))+(I2*Z2*(-((I2*x)/I0)-
+          l.J = ((Z1*((I2*Z2*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))+(I2*Z2*(-((I2*x)/I0)-
 DXV+DX2)*((I2*x)/I0+DXV-DX2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**(3/2))+(2*G2*I2*Z2
 *(-((I2*x)/I0)-DXV+DX2)*((I2*x)/I0+DXV-DX2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)
 **2)-Z2/I0-I2/I0)*Math.tan((2*G1)/Math.sqrt(((Z2*(-((I2*y)/I0)-DYV+DY2)*Math.tan((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)))/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2*x)/
@@ -604,9 +629,8 @@ I0+(I2*x)/I0+DXV-DX1)**2)**2-(I2*Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*y)/I0+DYV-DY2)*M
 )**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2)-(2*G2*I2*Z1*(-((I2*x)/I0)-DXV+DX2)*((I2*y)/I0+DYV-DY2)/Math.cos((2*G2)/Math.sqrt(((I2*y)/I0+DYV-DY2)**2+((I2
 *x)/I0+DXV-DX2)**2))**2)/(I0*(((I2*y)/I0+DYV-DY2)**2+((I2*x)/I0+DXV-DX2)**2)**2));
 
-          if (J <= 0) J = 0;
+          if (l.J <= 0) l.J = 0;
         }
-        L = l*J;
       }
     }
     break;
@@ -638,7 +662,6 @@ I0+(I2*x)/I0+DXV-DX1)**2)**2-(I2*Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*y)/I0+DYV-DY2)*M
           y0 = y1 + y*Z1/I0 - (y3-DY3+DYV)/b3*Z1*Math.tan(theta3) - (y2-DY2+DYV)/b2*Z3*Math.tan(theta2) - (y1-DY1 + DYV)/b1*Z1*Math.tan(theta1);
 
           l = getObject(x0 - DX0 + DXV, y0 - DY0 + DYV);
-          L = l;
         }
       }
     }
@@ -678,7 +701,6 @@ I0+(I2*x)/I0+DXV-DX1)**2)**2-(I2*Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*y)/I0+DYV-DY2)*M
             y0 = y1 + y*Z1/I0 - (y4-DY4+DYV)/b4*Z1*Math.tan(theta4) - (y3-DY3+DYV)/b3*Z1*Math.tan(theta3) - (y2-DY2+DYV)/b2*Z1*Math.tan(theta2) - (y1-DY1+DYV)/b1*Z1*Math.tan(theta1);
 
             l = getObject(x0 - DX0 + DXV, y0 - DY0 + DYV);
-          L = l;
           }
         }
       }
@@ -687,7 +709,7 @@ I0+(I2*x)/I0+DXV-DX1)**2)**2-(I2*Z2*(-((I2*x)/I0)-DXV+DX2)*((I2*y)/I0+DYV-DY2)*M
 
   }
 
-  return {L:L, l:l};
+  return l;
 }
 
 var data = null;
@@ -705,10 +727,14 @@ function drawImagePixelByPixel()
     for (var y = 0; y < canvas.height; y++)
     {
       let lum = getColorAtPixel(x, y);
-      data[y * canvas.width + x] = lum.L;
-      if (max < lum.L) max = lum.L;
-      l += lum.l;
-      L += lum.L;
+      data[y * canvas.width + x] = lum;
+      let ll = (lum.r + lum.g + lum.b);
+      let lL = ll * lum.J;
+      if (max < lum.r*lum.J) max = lum.r*lum.J;
+      if (max < lum.g*lum.J) max = lum.g*lum.J;
+      if (max < lum.b*lum.J) max = lum.b*lum.J;
+      l += ll;
+      L += lL;
     }
   }
 
@@ -716,16 +742,22 @@ function drawImagePixelByPixel()
 
   let imageData = context.createImageData(canvas.width, canvas.height);
   let image = imageData.data;
+  let s = 255 / max;
+
+  console.log("Scaling by " + s);
 
   for (var x = 0; x < canvas.width; x++)
   {
     for (var y = 0; y < canvas.height; y++)
     {
       let i = (y*canvas.width + x);
-      let l = data[i] * 255 / max;
-      i *= 4;
-      image[i] = image[i+1] = image[i+2] = l;
-      image[i+3] = 255;
+      let l = 255 / max;
+      let j = i * 4;
+      //image[i] = image[i+1] = image[i+2] = l;
+      image[j] = data[i].r * data[i].J * s;
+      image[j+1] = data[i].g * data[i].J * s;
+      image[j+2] = data[i].b * data[i].J * s;
+      image[j+3] = 255;
     }
   }
   context.putImageData(imageData, 0, 0);
@@ -749,6 +781,11 @@ window.onload = function()
       document.getElementById('lumtr1').style.display = "";
       document.getElementById('lumtr2').style.display = "";
     }
+  }
+  if (params.get('img'))
+  {
+    document.getElementById('src').src = params.get('img');
+    lblImg = 'src';
   }
 
   doUpdate();
