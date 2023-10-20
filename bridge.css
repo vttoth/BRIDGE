@@ -96,3 +96,10 @@ body.waiting *
 {
   text-align: center !important;
 }
+
+@media print {
+  button {
+    display: none;
+  }
+}
+
