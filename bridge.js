@@ -354,8 +354,7 @@ function getImgObject(img, x, y)
 
 function getColorAtPixel(x, y)
 {
-  let l = 0;
-  let L = 0;
+  let l = {r:0, g:0, b:0, J:1};
   let theta1, theta2, theta3, theta4;
   let b1, b2, b3, b4;
   let x0, y0;
@@ -784,10 +783,18 @@ window.onload = function()
   }
   if (params.get('img'))
   {
-    document.getElementById('src').src = params.get('img');
+    let img = document.getElementById('src');
     lblImg = 'src';
+    img.onload = function()
+    {
+      doUpdate();
+      doChange();
+    }
+    document.getElementById('src').src = params.get('img');
   }
-
-  doUpdate();
-  doChange();
+  else
+  {
+    doUpdate();
+    doChange();
+  }
 }
